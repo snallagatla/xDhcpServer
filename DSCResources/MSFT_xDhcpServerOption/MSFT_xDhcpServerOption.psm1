@@ -44,35 +44,61 @@ function Get-TargetResource
     # Check for DhcpServer module/role
     Assert-Module -moduleName DHCPServer
     
+    if($ScopeID -ne '*')
+    {
     # Convert the ScopeID to be a valid IPAddress
     $ScopeID = (Get-ValidIpAddress -ipString $ScopeID -AddressFamily $AddressFamily -parameterName 'ScopeID').ToString()
+    }
 
     # Test if the ScopeID is valid
+    if($ScopeID -ne '*')
+    {
     $null = Get-DhcpServerv4Scope -ScopeId $ScopeID -ErrorAction SilentlyContinue -ErrorVariable err
     if($err)
     {
         $errorMsg = $($LocalizedData.InvalidScopeIdMessage) -f $ScopeID
         New-TerminatingError -errorId ScopeIdNotFound -errorMessage $errorMsg -errorCategory InvalidOperation
     }
+    }
 
 #endregion Input Validation
 
     $ensure = 'Absent'
-    try
+    
+    if($ScopeID -eq '*')
     {
-        $dhcpOption = Get-DhcpServerv4OptionValue -ScopeID $ScopeID
-        if($dhcpOption)
+        try
         {
-            $dnsDomain = (($dhcpOption | Where-Object Name -like 'DNS Domain Name').value)[0]
-            $ensure = 'Present'
-            $dnsServerIP = ($dhcpOption | Where-Object Name -like 'DNS Servers').value
-            $Router = ($dhcpOption | Where-Object OptionId -Like 3).value
+            $dhcpOption = Get-DhcpServerv4OptionValue
+            if($dhcpOption)
+            {
+                $dnsDomain = (($dhcpOption | Where-Object Name -like 'DNS Domain Name').value)[0]
+                $ensure = 'Present'
+                $dnsServerIP = ($dhcpOption | Where-Object Name -like 'DNS Servers').value
+                $Router = ($dhcpOption | Where-Object OptionId -Like 3).value
+            }
+        }
+        catch
+        {
         }
     }
-    catch
+    else
     {
+        try
+        {
+            $dhcpOption = Get-DhcpServerv4OptionValue -ScopeID $ScopeID
+            if($dhcpOption)
+            {
+                $dnsDomain = (($dhcpOption | Where-Object Name -like 'DNS Domain Name').value)[0]
+                $ensure = 'Present'
+                $dnsServerIP = ($dhcpOption | Where-Object Name -like 'DNS Servers').value
+                $Router = ($dhcpOption | Where-Object OptionId -Like 3).value
+            }
+        }
+        catch
+        {
+        }
     }
-
     @{
         ScopeID = $ScopeID
         DnsDomain = $dnsDomain
@@ -112,8 +138,11 @@ function Set-TargetResource
     # Array of valid IP Address
     [String[]]$validDnSServer = @()
 
+    if($ScopeID -ne '*')
+    {
     # Convert the ScopeID to be a valid IPAddress
     $ScopeID = (Get-ValidIpAddress -ipString $ScopeID -AddressFamily $AddressFamily -parameterName 'ScopeID').ToString()
+    }
 
     # Convert the input to be valid IPAddress
     foreach ($dnsServerIp in $DnsServerIPAddress)
@@ -170,13 +199,16 @@ function Test-TargetResource
 
     # Array of valid IP Address
     [String[]]$validDnSServer = @()
-
+    
     # Check for DhcpServer module/role
     Assert-Module -moduleName DHCPServer
 
     # Convert the ScopeID to be a valid IPAddress
+    if($scopeId -ne '*')
+    {
     $ScopeID = (Get-ValidIpAddress -ipString $ScopeID -AddressFamily $AddressFamily -parameterName 'ScopeID').ToString()
-
+    
+    }
    # Array of valid IP Address
     [String[]]$validDnSServer = @()
     
@@ -198,12 +230,16 @@ function Test-TargetResource
     $Router = $validRouter
 
     # Test if the ScopeID is valid
+    if($ScopeID -ne '*')
+    {
     $null = Get-DhcpServerv4Scope -ScopeId $ScopeID -ErrorAction SilentlyContinue -ErrorVariable err
     if($err)
     {
         $errorMsg = $($LocalizedData.InvalidScopeIdMessage) -f $ScopeID
         New-TerminatingError -errorId ScopeIdNotFound -errorMessage $errorMsg -errorCategory InvalidOperation
     }
+    }
+    
 
 #endregion Input Validation
 
@@ -243,8 +279,14 @@ function ValidateResourceProperties
     $scopeIDMessage = $($LocalizedData.CheckScopeIDMessage) -f $ScopeID
     Write-Verbose -Message $scopeIDMessage
     
+    if($ScopeID -eq '*')
+    {
+    $dhcpOption = Get-DhcpServerv4OptionValue
+    }
+    else
+    {
     $dhcpOption = Get-DhcpServerv4OptionValue -ScopeID $ScopeID
-
+    }
     # Found DHCPOption
     if($dhcpOption)
     {
@@ -271,9 +313,14 @@ function ValidateResourceProperties
                     {
                         $settingPropertyMessage = $($LocalizedData.SettingPropertyMessage) -f 'DNS server ip'
                         Write-Verbose -Message $settingPropertyMessage
-
+                        if($ScopeID -eq '*')
+                        {
+                        Set-DhcpServerv4OptionValue -DnsServer $DnsServerIPAddress -Force
+                        }
+                        else
+                        {
                         Set-DhcpServerv4OptionValue -ScopeId $ScopeID -DnsServer $DnsServerIPAddress -Force
-                        
+                        }
                         $setPropertyMessage = $($LocalizedData.SetPropertyMessage) -f 'DNS server ip', ($DnsServerIPAddress -join ', ')
                         Write-Verbose -Message $setPropertyMessage
                         
@@ -306,9 +353,14 @@ function ValidateResourceProperties
                     {
                         $settingPropertyMessage = $($LocalizedData.SettingPropertyMessage) -f 'DNS domain name'
                         Write-Verbose -Message $settingPropertyMessage
-
+                        if($ScopeID -eq '*')
+                        {
+                        Set-DhcpServerv4OptionValue -DnsDomain $DnsDomain
+                        }
+                        else
+                        {
                         Set-DhcpServerv4OptionValue -ScopeId $ScopeID -DnsDomain $DnsDomain
-
+                        }
                         $setPropertyMessage = $($LocalizedData.SetPropertyMessage) -f 'DNS domain name', ($DnsDomain -join ', ')
                         Write-Verbose -Message $setPropertyMessage
                     } # end $Apply
@@ -342,9 +394,14 @@ function ValidateResourceProperties
                     {
                         $settingPropertyMessage = $($LocalizedData.SettingPropertyMessage) -f $propertyName
                         Write-Verbose -Message $settingPropertyMessage
-                      
+                        if($ScopeID -eq '*')
+                        {
+                        Set-DhcpServerv4OptionValue -Router $Router
+                        }
+                        else
+                        {
                         Set-DhcpServerv4OptionValue -ScopeId $ScopeID -Router $Router
-
+                        }
                         $setPropertyMessage = $($LocalizedData.SetPropertyMessage) -f $propertyName, ($Router -join ', ')
                         Write-Verbose -Message $setPropertyMessage
                     } # end $Apply
@@ -374,7 +431,14 @@ function ValidateResourceProperties
                 Write-Verbose -Message ($LocalizedData.RemovingScopeOptions -f $ScopeID)
                 foreach($option in $dhcpOption.OptionID)
                 {
+                    if($ScopeID -eq '*')
+                    {
+                    Remove-DhcpServerv4OptionValue -OptionId $option
+                    }
+                    else
+                    {
                     Remove-DhcpServerv4OptionValue -ScopeId $ScopeID -OptionId $option
+                    }
                 }
                 Write-Verbose -Message ($LocalizedData.ScopeOptionsRemoved)
             } # end if $Apply
@@ -394,8 +458,15 @@ function ValidateResourceProperties
                 $addingScopeIdMessage = $($LocalizedData.AddingScopeIDMessage) -f $ScopeID
                 Write-Verbose -Message $addingScopeIdMessage
 
+                if($ScopeId -eq '*')
+                {
+                $parameters = @{}
+                }
+                else
+                {
                 $parameters = @{ScopeID = $ScopeID;}
-                
+                }
+
                 ## If DnsServer(s) specified, pass it
                 if ($PSBoundParameters.ContainsKey('DnsServerIPAddress'))
                 {
