@@ -40,21 +40,9 @@ function Get-TargetResource
     # Check for DhcpServer module/role
     Assert-Module -moduleName DHCPServer
 
-    # Convert the Start Range to be a valid IPAddress
-    $IPStartRange = (Get-ValidIpAddress -ipString $IPStartRange -AddressFamily $AddressFamily -parameterName 'IPStartRange').ToString()
-
-    # Convert the End Range to be a valid IPAddress
-    $IPEndRange = (Get-ValidIpAddress -ipString $IPEndRange -AddressFamily $AddressFamily -parameterName 'IPEndRange').ToString()
-
-    # Convert the Subnet Mask to be a valid IPAddress
-    $SubnetMask = (Get-ValidIpAddress -ipString $SubnetMask -AddressFamily $AddressFamily -parameterName 'SubnetMask').ToString()
-
-    # Check to ensure startRange is smaller than endRange
-    if($IPEndRange.Address -lt $IPStartRange.Address)
-    {
-        $errorMsg = $LocalizedData.InvalidStartAndEndRangeMessage
-        New-TerminatingError -errorId RangeNotCorrect -errorMessage $errorMsg -errorCategory InvalidArgument
-    }
+    # Convert the Prefix to be a valid IPAddress
+    
+    # If the prefix if Invalid, Terminate the program.
     
 #endregion Input Validation
 
@@ -407,7 +395,11 @@ function Validate-ResourceProperties
 
                 $addingScopeMessage = $LocalizedData.AddingScopeMessage
                 Write-Verbose -Message $addingScopeMessage
-                
+                Write-Verbose $Name
+                Write-Verbose $PreferredLifeTime
+                Write-Verbose $ValidLifeTime
+                Write-Verbose $state
+                Write-Verbose "Prefix is $Prefix"
                 try
                 {
                     # Create a new scope with specified properties
