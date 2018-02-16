@@ -43,17 +43,6 @@ function Get-TargetResource
 
     # Check for DhcpServer module/role
     Assert-Module -moduleName DHCPServer
-    Write-Verbose "ScopeId is $ScopeId"
-    
-
-    # Test if the ScopeID is valid
-    
-    $null = Get-DhcpServerv4Scope -ErrorAction SilentlyContinue -ErrorVariable err
-    if($err)
-    {
-        $errorMsg = $($LocalizedData.InvalidScopeIdMessage) -f $ScopeID
-        New-TerminatingError -errorId ScopeIdNotFound -errorMessage $errorMsg -errorCategory InvalidOperation
-    }
     
 
 #endregion Input Validation

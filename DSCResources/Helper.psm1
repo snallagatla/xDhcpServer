@@ -41,7 +41,6 @@ function Get-ValidIPAddress
         [string]$ipString,
 
         [Parameter(Mandatory)]
-        [ValidateSet('IPv4')]
         [String]$AddressFamily,
 
         [Parameter(Mandatory)]
@@ -139,3 +138,51 @@ function Get-ValidTimeSpan
 
     $timeSpan
 }
+
+function Expand-IPv6Address 
+{ 
+    [CmdletBinding()] 
+    param ( 
+    [Parameter(Mandatory=$True,
+    ValueFromPipeline=$True)]
+        [string]$address
+    ) 
+     
+     Begin
+     {
+     $IPv6Address=@()
+     }
+     Process
+     {
+        foreach ($address in $address)
+        {
+            Write-Verbose "Test for ::" 
+            if ($address.Contains("::")){ 
+            $blocks = $address -split ":" 
+            $count = $blocks.Count 
+            $replace = 8 - $count + 1 
+            for ($i=0; $i -le $count-1; $i++){ 
+                if ($blocks[$i] -eq ""){ 
+                    $blocks[$i] = ("0000:" * $replace).TrimEnd(":") 
+                } 
+            } 
+            $address = $blocks -join ":" 
+        }             
+     
+        Write-Verbose "Check leading 0 in place" 
+        $blocks = $address -split ":" 
+        for ($i=0; $i -le $blocks.Count-1; $i++){ 
+            if ($blocks[$i].length -ne 4){ 
+                $blocks[$i] = $blocks[$i].Padleft(4,"0") 
+            } 
+        } 
+     
+        $address = $blocks -join ":"             
+        $IPv6Address += $address
+      }
+    }
+    end
+    {
+    $IPv6Address
+    }
+} 

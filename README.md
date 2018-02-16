@@ -14,6 +14,7 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 ## Resources
 
 * **xDhcpServerScope** sets a scope for consecutive range of possible IP addresses that the DHCP server can lease to clients on a subnet.
+* **xDhcpServerV6Scope** sets a IPv6 scope for consecutive range of possible IP addresses that the DHCP server can lease to clients on a subnet.
 * **xDhcpServerReservation** sets lease assignments used to ensure that a specified client on a subnet can always use the same IP address.
 * **xDhcpServerOptions** currently supports setting DNS domain and DNS Server IP Address options at a DHCP server scope level.
 * **xDhcpServerAuthorization** authorizes a DHCP in Active Directory.
@@ -31,6 +32,16 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 * **State**: Whether scope should be active or inactive.
 * **Ensure**: Whether DHCP scope should be present or removed
 * **ScopeID**: Scope Identifier. This is a read-only property for this resource.
+
+### xDhcpServerV6Scope
+
+* **Name**: Name of this DHCP Scope
+* **LeaseDuration**: Time interval for which an IP address should be leased
+ * This should be specified in the following format: `Days.Hours:Minutes:Seconds`
+ * For example, '`02.00:00:00`' is 2 days and '`08:00:00`' is 8 hours.
+* **State**: Whether scope should be active or inactive.
+* **Ensure**: Whether DHCP scope should be present or removed
+* **Prefix**: Scope Identifier. This is a read-only property for this resource.
 
 ### xDhcpServerReservation
 
@@ -107,6 +118,24 @@ configuration Sample_xDhcpsServerScope_NewScope
         LeaseDuration = ((New-TimeSpan -Hours 8 ).ToString())
         State = 'Active'
         AddressFamily = 'IPv4'
+    }
+}
+```
+
+### Creating a DHCP Server IPv6 Scope
+
+```powershell
+configuration Sample_xDhcpsServerScope_NewScope
+{
+    Import-DscResource -module xDHCpServer
+    xDhcpServerV6Scope Scope
+    {
+        Ensure = 'Present'
+        Prefix = '2405:2300:ff02:80'
+        Name = 'PowerShellScope'
+        LeaseDuration = ((New-TimeSpan -Hours 8 ).ToString())
+        State = 'Active'
+        AddressFamily = 'IPv6'
     }
 }
 ```

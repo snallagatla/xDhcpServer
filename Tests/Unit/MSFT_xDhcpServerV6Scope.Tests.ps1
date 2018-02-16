@@ -1,5 +1,5 @@
 $Global:DSCModuleName      = 'xDhcpServer'
-$Global:DSCResourceName    = 'MSFT_xDhcpServerScope'
+$Global:DSCResourceName    = 'MSFT_xDhcpServerV6Scope'
 
 #region HEADER
 [String] $moduleRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $Script:MyInvocation.MyCommand.Path))
@@ -33,29 +33,21 @@ try
         #endregion
 
         $testScopeName = 'Test Scope';
-        $testScopeID = '192.168.1.0';
-        $testIPStartRange = '192.168.1.10';
-        $testIPEndRange = '192.168.1.99';
-        $testSubnetMask = '255.255.255.0';
+        $testScopePrefix = '2405:2300:ff02:80::';
         $testState = 'Active';
         $testLeaseDuration = New-TimeSpan -Days 8;
         
         $testParams = @{
             Name = $testScopeName;
-            IPStartRange = $testIPStartRange;
-            IPEndRange = $testIPEndRange;
-            SubnetMask = $testSubnetMask;
+            
         }
                 
         $fakeDhcpServerv4Scope = [PSCustomObject] @{
-            ScopeID = $testScopeID;
+            Prefix = $testScopePrefix;
             Name = $testScopeName;
-            StartRange = $testIPStartRange;
-            EndRange = $testIPEndRange;
-            SubnetMask = $testSubnetMask;
             LeaseDuration = $testLeaseDuration;
             State = $testState;
-            AddressFamily = 'IPv4';
+            AddressFamily = 'IPv6';
         }
 
         #region Function Get-TargetResource
@@ -64,7 +56,7 @@ try
             Mock Assert-Module -ParameterFilter { $ModuleName -eq 'DHCPServer' } { }
 
             It 'Calls "Assert-Module" to ensure "DHCPServer" module is available' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
+                Mock Get-DhcpServerv6Scope { return $fakeDhcpServerv6Scope; }
                 
                 $result = Get-TargetResource @testParams;
                 
@@ -72,7 +64,7 @@ try
             }
             
             It 'Returns a "System.Collections.Hashtable" object type' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
+                Mock Get-DhcpServerv6Scope { return $fakeDhcpServerv6Scope; }
                 $result = Get-TargetResource @testParams;
                 
                 $result -is [System.Collections.Hashtable] | Should Be $true;
@@ -86,7 +78,7 @@ try
             Mock Assert-Module -ParameterFilter { $ModuleName -eq 'DHCPServer' } { }
 
             It 'Returns a "System.Boolean" object type' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
+                Mock Get-DhcpServerv6Scope { return $fakeDhcpServerv6Scope; }
                 
                 $result = Test-TargetResource @testParams;
                 
@@ -94,7 +86,7 @@ try
             }
             
             It 'Passes when all parameters are correct' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
+                Mock Get-DhcpServerv6Scope { return $fakeDhcpServerv6Scope; }
                 
                 $result = Test-TargetResource @testParams;
                 
@@ -102,7 +94,7 @@ try
             }
             
             It 'Passes when optional "LeaseDuration" parameter is correct' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
+                Mock Get-DhcpServerv6Scope { return $fakeDhcpServerv6Scope; }
                 
                 $result = Test-TargetResource @testParams -LeaseDuration $testLeaseDuration.ToString();
                 
@@ -110,7 +102,7 @@ try
             }
             
             It 'Passes when optional "State" parameter is correct' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
+                Mock Get-DhcpServerv6Scope { return $fakeDhcpServerv6Scope; }
                 
                 $result = Test-TargetResource @testParams -State 'Active';
                 
@@ -118,7 +110,7 @@ try
             }
             
             It 'Passes when "Ensure" = "Absent" and scope does not exist' {
-                Mock Get-DhcpServerv4Scope { }
+                Mock Get-DhcpServerv6Scope { }
                 
                 $result = Test-TargetResource @testParams -Ensure 'Absent';
                 
@@ -126,7 +118,7 @@ try
             }
             
             It 'Fails when "Name" parameter is incorrect' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
+                Mock Get-DhcpServerv6Scope { return $fakeDhcpServerv6Scope; }
                 $testNameParams = $testParams.Clone();
                 $testNameParams['Name'] = 'IncorrectName';
                 
@@ -135,38 +127,8 @@ try
                 $result | Should Be $false;
             }
             
-            It 'Fails when "IPStartRange" parameter is incorrect' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
-                $testIPStartRangeParams = $testParams.Clone();
-                $testIPStartRangeParams['IPStartRange'] = '192.168.1.1';
-                
-                $result = Test-TargetResource @testIPStartRangeParams;
-                
-                $result | Should Be $false;
-            }
-            
-            It 'Fails when "IPEndRange" parameter is incorrect' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
-                $testIPEndRangeParams = $testParams.Clone();
-                $testIPEndRangeParams['IPEndRange'] = '192.168.1.254';
-                
-                $result = Test-TargetResource @testIPEndRangeParams;
-                
-                $result | Should Be $false;
-            }
-            
-            It 'Fails when "SubnetMask" parameter is incorrect' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
-                $testSubnetMaskParams = $testParams.Clone();
-                $testSubnetMaskParams['SubnetMask'] = '255.255.240.0';
-                
-                $result = Test-TargetResource @testSubnetMaskParams;
-                
-                $result | Should Be $false;
-            }
-            
             It 'Fails when optional "LeaseDuration" parameter is incorrect' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
+                Mock Get-DhcpServerv6Scope { return $fakeDhcpServerv6Scope; }
                 
                 $result = Test-TargetResource @testParams -LeaseDuration '08:00:00';
                 
@@ -174,7 +136,7 @@ try
             }
             
             It 'Fails when optional "State" parameter is incorrect' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
+                Mock Get-DhcpServerv6Scope { return $fakeDhcpServerv6Scope; }
                 
                 $result = Test-TargetResource @testParams -State 'Inactive';
                 
@@ -182,7 +144,7 @@ try
             }
             
             It 'Fails when "Ensure" = "Absent" and scope does exist' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
+                Mock Get-DhcpServerv6Scope { return $fakeDhcpServerv6Scope; }
                 
                 $result = Test-TargetResource @testParams -Ensure 'Absent';
                 
@@ -197,44 +159,34 @@ try
             
             Mock Assert-Module -ParameterFilter { $ModuleName -eq 'DHCPServer' } { }
             
-            It 'Calls "Add-DhcpServerv4Scope" when "Ensure" = "Present" and scope does not exist' {
-                Mock Get-DhcpServerv4Scope { }
-                Mock Add-DhcpServerv4Scope { }
+            It 'Calls "Add-DhcpServerv6Scope" when "Ensure" = "Present" and scope does not exist' {
+                Mock Get-DhcpServerv6Scope { }
+                Mock Add-DhcpServerv6Scope { }
                 
                 Set-TargetResource @testParams;
                 
-                Assert-MockCalled Add-DhcpServerv4Scope -Scope It;
+                Assert-MockCalled Add-DhcpServerv6Scope -Scope It;
             }
             
-            It 'Calls "Remove-DhcpServerv4Scope" when "Ensure" = "Absent" and scope does exist' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
-                Mock Remove-DhcpServerv4Scope { }
+            It 'Calls "Remove-DhcpServerv6Scope" when "Ensure" = "Absent" and scope does exist' {
+                Mock Get-DhcpServerv6Scope { return $fakeDhcpServerv6Scope; }
+                Mock Remove-DhcpServerv6Scope { }
                 
                 Set-TargetResource @testParams -Ensure 'Absent';
                 
-                Assert-MockCalled Remove-DhcpServerv4Scope -Scope It;
+                Assert-MockCalled Remove-DhcpServerv6Scope -Scope It;
             }
             
-            It 'Calls "Set-DhcpServerv4Scope" when "Ensure" = "Present" and scope does exist' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
-                Mock Set-DhcpServerv4Scope { }
+            It 'Calls "Set-DhcpServerv6Scope" when "Ensure" = "Present" and scope does exist' {
+                Mock Get-DhcpServerv6Scope { return $fakeDhcpServerv6Scope; }
+                Mock Set-DhcpServerv6Scope { }
                 
                 Set-TargetResource @testParams -LeaseDuration '08:00:00';
                 
-                Assert-MockCalled Set-DhcpServerv4Scope -Scope It;
+                Assert-MockCalled Set-DhcpServerv6Scope -Scope It;
             }
             
-            It 'Calls "Remove-DhcpServerv4Scope" when "Ensure" = "Present", scope does exist but "SubnetMask" is incorrect' {
-                Mock Get-DhcpServerv4Scope { return $fakeDhcpServerv4Scope; }
-                Mock Remove-DhcpServerv4Scope { }
-                Mock Set-DhcpServerv4Scope { }
-                $testSubnetMaskParams = $testParams.Clone();
-                $testSubnetMaskParams['SubnetMask'] = '255.255.240.0';
-                
-                Set-TargetResource @testSubnetMaskParams;
-                
-                Assert-MockCalled Remove-DhcpServerv4Scope -Scope It;
-            }
+            
             
         }
         #endregion

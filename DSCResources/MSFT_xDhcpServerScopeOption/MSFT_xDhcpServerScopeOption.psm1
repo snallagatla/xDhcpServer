@@ -62,7 +62,7 @@ function Get-TargetResource
         try
         {
             $dhcpOption = Get-DhcpServerv4OptionValue -ScopeID $ScopeID
-            $dhcpMicrosoftOption = Get-DhcpServerv4OptionValue -VendorClass 'Microsoft Options'
+            $dhcpMicrosoftOption = Get-DhcpServerv4OptionValue -VendorClass 'Microsoft Options' -ScopeId $ScopeID
             if($dhcpOption)
             {
                 $dnsDomain = (($dhcpOption | Where-Object Name -like 'DNS Domain Name').value)[0]
@@ -126,11 +126,6 @@ function Set-TargetResource
     )
 
 #region Input Validation
-    
-    Write-Verbose "In Set-TargetResource"
-    Write-Verbose "Before dns servers $DnsServerIPAddress"
-    Write-Verbose "Before Time servers $TimeServer"
-    Write-Verbose "Before NTP servers $NTPServer"
     
     # Convert the ScopeID to be a valid IPAddress
     $ScopeID = (Get-ValidIpAddress -ipString $ScopeID -AddressFamily $AddressFamily -parameterName 'ScopeID').ToString()
@@ -220,10 +215,7 @@ function Test-TargetResource
     )
 
 #region Input Validation
-Write-Verbose "In Test TagetResourse"
-    Write-Verbose "Before dns servers $DnsServerIPAddress"
-    Write-Verbose "Before Time servers $TimeServer"
-    Write-Verbose "Before NTP servers $NTPServer"
+    
     # Array of valid IP Address
     [String[]]$validDnSServer = @()
     
@@ -332,7 +324,8 @@ function ValidateResourceProperties
     
 
     $dhcpOption = Get-DhcpServerv4OptionValue -ScopeID $ScopeID
-    
+    $dhcpMicrosoftOption = Get-DhcpServerv4OptionValue -VendorClass 'Microsoft Options' -ScopeId $ScopeID
+
     # Found DHCPOption
     if($dhcpOption)
     {
@@ -487,8 +480,8 @@ function ValidateResourceProperties
                 $propertyName = 'Release DHCP on Shutdown'
                 $checkPropertyMessage = $($LocalizedData.CheckPropertyMessage) -f 'Release DHCP on Shutdown'
                 Write-Verbose -Message $checkPropertyMessage
-
-                $ReleaseDHCPonShutdownValue = ($DhcpOption | Where-Object OptionId -eq 2).Value
+                
+                $ReleaseDHCPonShutdownValue = ($dhcpMicrosoftOption | Where-Object OptionId -eq 2).Value
 
                 if((-not $ReleaseDHCPonShutdownValue) -or (Compare-Object $ReleaseDHCPonShutdownValue $ReleaseDHCPonShutdown))
                 {
